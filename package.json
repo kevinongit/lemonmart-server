@@ -1,0 +1,65 @@
+{
+  "name": "lemon-mart-server",
+  "version": "1.0.0",
+  "description": "Easy to learn and use full-stack TypeScript with Angular",
+  "main": "index.js",
+  "config": {
+    "awsRegion": "us-east-1",
+    "awsEcsCluster": "lemon-mart-cluster",
+    "webAppGitUrl": "https://github.com/kevinongit/lemonmart.git",
+    "awsService": "lemon-mart-service"
+  },
+  "scripts": {
+    "init:env": "init-dev-env generate-dot-env example.env -f && init-dev-env generate-dot-env server-example.env --source=. --target=server -f",
+    "postinstall": "npm-recursive-install --skip-root",
+    "build": "npm run build --prefix ./server && npm run build --prefix ./web-app -- --configuration=lemon-mart-server",
+    "test": "npm test --prefix ./server && npm test --prefix ./web-app -- --watch=false",
+    "prestart": "npm run build && docker-compose build",
+    "start": "docker-compose up",
+    "stop": "docker-compose down",
+    "clean": "docker-compose rm",
+    "clean:all": "docker system prune --volumes",
+    "start:backend": "docker-compose -f docker-compose.backend.yml up --build",
+    "start:database": "docker-compose -f docker-compose.database.yml up --build",
+    "publish:aws": "cross-conf-env ecs-cli compose --file docker-compose.aws.yml -p $npm_package_name -c $npm_package_config_awsEcsCluster -r $npm_package_config_awsRegion create",
+    "start:docker:database": "docker run --env-file .env -d -p '27017:27017' -v '/tmp/lemon-mart-db:/data/db' duluca/minimal-mongo",
+    "rimraf:node_modules": "rimraf node_modules && rimraf server/node_modules && rimraf web-app/node_modules",
+    "webapp:clean": "cross-conf-env rimraf web-app && git rm -r --cached web-app",
+    "webapp:init": "cross-conf-env git submodule add $npm_package_config_webAppGitUrl web-app",
+    "postwebapp:init": "git submodule status web-app",
+    "modules:init": "git submodule update --init --recursive",
+    "modules:update": "git submodule update --recursive --remote",
+    "aws:login:win": "cross-conf-env aws ecr get-login --no-include-email --region $npm_package_config_awsRegion > dockerLogin.cmd && call dockerLogin.cmd && del dockerLogin.cmd",
+    "aws:login:mac": "eval $(aws ecr get-login --no-include-email --region $npm_package_config_awsRegion)",
+    "aws:login": "run-p -cs aws:login:win aws:login:mac",
+    "aws:deploy": "cross-conf-env docker run --env-file ./.env silintl/ecs-deploy -c $npm_package_config_awsEcsCluster -n $npm_package_config_awsService -i $npm_package_config_imageRepo:latest -r $npm_package_config_awsRegion --timeout 1000",
+    "aws:release": "run-s -cs aws:login docker:publish aws:deploy",
+    "aws:publish:compose": "cross-conf-env ecs-cli compose --file docker-compose.aws.yml -p $npm_package_name -c $npm_package_config_awsEcsCluster -r $npm_package_config_awsRegion create"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/duluca/lemon-mart-server.git"
+  },
+  "keywords": [
+    "angular",
+    "typescript",
+    "node",
+    "mongo"
+  ],
+  "author": "Doguhan Uluca",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/duluca/lemon-mart/issues"
+  },
+  "homepage": "https://github.com/duluca/lemon-mart#readme",
+  "devDependencies": {
+    "cross-conf-env": "^1.1.2",
+    "dev-norms": "^1.7.1",
+    "init-dev-env": "^1.0.0",
+    "npm-run-all": "^4.1.5",
+    "recursive-install": "^1.4.0",
+    "rimraf": "^3.0.2",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {}
+}
