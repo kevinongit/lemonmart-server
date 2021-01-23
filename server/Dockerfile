@@ -1,6 +1,6 @@
 FROM node:lts-alpine
 
-RUN apk add --update --no-progress mask python bash
+RUN apk add --update --no-progress make python bash
 ENV NPM_CONFIG_LOGLEVEL error
 
 ADD https://github.com/Yelp/dumb-init/releases/download/v1.2.2/dumb-init_1.2.2_amd64 /usr/local/bin/dumb-init
